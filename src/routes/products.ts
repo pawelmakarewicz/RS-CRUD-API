@@ -8,8 +8,8 @@ import {
 } from '../schemas.js';
 
 const productRoutes: FastifyPluginAsync = async (fastify) => {
-  // db будет доступен через fastify.db (создаём в buildApp)
-  const db = fastify.db as InMemoryDB;
+  // db доступен через fastify.db (определён в buildApp)
+  const db = fastify.db;
 
   // GET / - получить все продукты (полный путь: /api/products)
   fastify.get('/', async (request, reply) => {
