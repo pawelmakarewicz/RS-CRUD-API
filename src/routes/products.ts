@@ -5,8 +5,13 @@ import {
   productSchema,
   createProductSchema,
   updateProductSchema,
-  uuidSchema,
 } from '../schemas.js';
+
+// UUID validation function
+const isValidUUID = (id: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
 
 const productRoutes: FastifyPluginAsync = async (fastify) => {
   const db = fastify.db;
@@ -25,14 +30,15 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /:id - получить продукт по ID
   fastify.get<{ Params: { id: string } }>('/:id', {
     schema: {
-      params: {
-        id: uuidSchema,
-      },
       response: {
         200: productSchema,
       },
     },
   }, async (request, reply) => {
+    if (!isValidUUID(request.params.id)) {
+      return reply.status(400).send({ message: 'Invalid product ID format' });
+    }
+
     const product = db.getById(request.params.id);
     if (!product) {
       return reply.status(404).send({ message: 'Product not found' });
@@ -56,15 +62,16 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
   // PUT /:id - обновить продукт
   fastify.put<{ Params: { id: string } }>('/:id', {
     schema: {
-      params: {
-        id: uuidSchema,
-      },
       body: updateProductSchema,
       response: {
         200: productSchema,
       },
     },
   }, async (request, reply) => {
+    if (!isValidUUID(request.params.id)) {
+      return reply.status(400).send({ message: 'Invalid product ID format' });
+    }
+
     if (!db.exists(request.params.id)) {
       return reply.status(404).send({ message: 'Product not found' });
     }
@@ -75,12 +82,12 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
 
   // DELETE /:id - удалить продукт
   fastify.delete<{ Params: { id: string } }>('/:id', {
-    schema: {
-      params: {
-        id: uuidSchema,
-      },
-    },
+    schema: {},
   }, async (request, reply) => {
+    if (!isValidUUID(request.params.id)) {
+      return reply.status(400).send({ message: 'Invalid product ID format' });
+    }
+
     if (!db.exists(request.params.id)) {
       return reply.status(404).send({ message: 'Product not found' });
     }
