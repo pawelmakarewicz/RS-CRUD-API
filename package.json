@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "scripts": {
+    "start:dev": "tsx watch src/server.ts",
+    "start:prod": "tsc && node dist/server.js",
+    "start:multi": "tsx src/cluster.ts",
+    "test": "node --import tsx/esm --test \"test/**/*.ts\"",
+    "build": "tsc"
+  }
+}
