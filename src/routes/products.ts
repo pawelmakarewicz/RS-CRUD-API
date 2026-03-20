@@ -1,10 +1,16 @@
-import { FastifyPluginAsync } from 'fastify';
+import {
+  FastifyPluginAsync,
+  FastifyRequest,
+  FastifyReply,
+} from 'fastify';
 import { z } from 'zod';
 import { InMemoryDB } from '../db.js';
 import {
   productSchema,
   createProductSchema,
   updateProductSchema,
+  type CreateProductInput,
+  type UpdateProductInput,
 } from '../schemas.js';
 
 // UUID validation function
@@ -13,6 +19,7 @@ const isValidUUID = (id: string): boolean => {
   return uuidRegex.test(id);
 };
 
+// Типизированные роуты
 const productRoutes: FastifyPluginAsync = async (fastify) => {
   const db = fastify.db;
 
@@ -23,7 +30,7 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
         200: z.array(productSchema),
       },
     },
-  }, async (request, reply) => {
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     return reply.send(db.getAll());
   });
 
@@ -34,7 +41,7 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
         200: productSchema,
       },
     },
-  }, async (request, reply) => {
+  }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     if (!isValidUUID(request.params.id)) {
       return reply.status(400).send({ message: 'Invalid product ID format' });
     }
@@ -54,7 +61,7 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
         201: productSchema,
       },
     },
-  }, async (request, reply) => {
+  }, async (request: FastifyRequest<{ Body: CreateProductInput }>, reply: FastifyReply) => {
     const newProduct = db.create(request.body);
     return reply.status(201).send(newProduct);
   });
@@ -67,7 +74,7 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
         200: productSchema,
       },
     },
-  }, async (request, reply) => {
+  }, async (request: FastifyRequest<{ Params: { id: string }; Body: UpdateProductInput }>, reply: FastifyReply) => {
     if (!isValidUUID(request.params.id)) {
       return reply.status(400).send({ message: 'Invalid product ID format' });
     }
@@ -83,7 +90,7 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
   // DELETE /:id - удалить продукт
   fastify.delete<{ Params: { id: string } }>('/:id', {
     schema: {},
-  }, async (request, reply) => {
+  }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     if (!isValidUUID(request.params.id)) {
       return reply.status(400).send({ message: 'Invalid product ID format' });
     }
