@@ -1,91 +1,91 @@
 import { FastifyPluginAsync } from 'fastify';
+import { z } from 'zod';
 import { InMemoryDB } from '../db.js';
 import {
+  productSchema,
   createProductSchema,
   updateProductSchema,
   uuidSchema,
-  type Product,
 } from '../schemas.js';
 
 const productRoutes: FastifyPluginAsync = async (fastify) => {
-  // db доступен через fastify.db (определён в buildApp)
   const db = fastify.db;
 
-  // GET / - получить все продукты (полный путь: /api/products)
-  fastify.get('/', async (request, reply) => {
-    return reply.status(200).send(db.getAll());
+  // GET / - получить все продукты
+  fastify.get('/', {
+    schema: {
+      response: {
+        200: z.array(productSchema),
+      },
+    },
+  }, async (request, reply) => {
+    return reply.send(db.getAll());
   });
 
-  // GET /:id - получить продукт по ID (полный путь: /api/products/:id)
-  fastify.get<{ Params: { id: string } }>('/:id', async (request, reply) => {
-    const { id } = request.params;
-
-    // Валидация UUID
-    const uuidResult = uuidSchema.safeParse(id);
-    if (!uuidResult.success) {
-      return reply.status(400).send({ message: 'Invalid product ID format' });
-    }
-
-    const product = db.getById(id);
+  // GET /:id - получить продукт по ID
+  fastify.get<{ Params: { id: string } }>('/:id', {
+    schema: {
+      params: {
+        id: uuidSchema,
+      },
+      response: {
+        200: productSchema,
+      },
+    },
+  }, async (request, reply) => {
+    const product = db.getById(request.params.id);
     if (!product) {
       return reply.status(404).send({ message: 'Product not found' });
     }
-
-    return reply.status(200).send(product);
+    return reply.send(product);
   });
 
-  // POST / - создать продукт (полный путь: /api/products)
-  fastify.post('/', async (request, reply) => {
-    const bodyResult = createProductSchema.safeParse(request.body);
-
-    if (!bodyResult.success) {
-      return reply.status(400).send({ message: 'Invalid product data' });
-    }
-
-    const newProduct = db.create(bodyResult.data);
+  // POST / - создать продукт
+  fastify.post('/', {
+    schema: {
+      body: createProductSchema,
+      response: {
+        201: productSchema,
+      },
+    },
+  }, async (request, reply) => {
+    const newProduct = db.create(request.body);
     return reply.status(201).send(newProduct);
   });
 
-  // PUT /:id - обновить продукт (полный путь: /api/products/:id)
-  fastify.put<{ Params: { id: string } }>('/:id', async (request, reply) => {
-    const { id } = request.params;
-
-    // Валидация UUID
-    const uuidResult = uuidSchema.safeParse(id);
-    if (!uuidResult.success) {
-      return reply.status(400).send({ message: 'Invalid product ID format' });
-    }
-
-    // Проверка существования
-    if (!db.exists(id)) {
+  // PUT /:id - обновить продукт
+  fastify.put<{ Params: { id: string } }>('/:id', {
+    schema: {
+      params: {
+        id: uuidSchema,
+      },
+      body: updateProductSchema,
+      response: {
+        200: productSchema,
+      },
+    },
+  }, async (request, reply) => {
+    if (!db.exists(request.params.id)) {
       return reply.status(404).send({ message: 'Product not found' });
     }
 
-    const bodyResult = updateProductSchema.safeParse(request.body);
-    if (!bodyResult.success) {
-      return reply.status(400).send({ message: 'Invalid product data' });
-    }
-
-    const updated = db.update(id, bodyResult.data);
-    return reply.status(200).send(updated);
+    const updated = db.update(request.params.id, request.body);
+    return reply.send(updated);
   });
 
-  // DELETE /:id - удалить продукт (полный путь: /api/products/:id)
-  fastify.delete<{ Params: { id: string } }>('/:id', async (request, reply) => {
-    const { id } = request.params;
-
-    // Валидация UUID
-    const uuidResult = uuidSchema.safeParse(id);
-    if (!uuidResult.success) {
-      return reply.status(400).send({ message: 'Invalid product ID format' });
-    }
-
-    // Проверка существования
-    if (!db.exists(id)) {
+  // DELETE /:id - удалить продукт
+  fastify.delete<{ Params: { id: string } }>('/:id', {
+    schema: {
+      params: {
+        id: uuidSchema,
+      },
+    },
+  }, async (request, reply) => {
+    if (!db.exists(request.params.id)) {
       return reply.status(404).send({ message: 'Product not found' });
     }
 
-    db.delete(id);
+    db.delete(request.params.id);
     return reply.status(204).send();
   });
 };
