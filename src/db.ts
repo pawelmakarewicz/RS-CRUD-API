@@ -1,5 +1,5 @@
-import { Product, CreateProductInput, UpdateProductInput } from './schemas.js';
-import { randomUUID } from 'node:crypto';
+import { Product, CreateProductInput, UpdateProductInput } from "./schemas.js";
+import { randomUUID } from "node:crypto";
 
 class InMemoryDB {
   private products: Map<string, Product> = new Map();
@@ -25,9 +25,9 @@ class InMemoryDB {
     return product;
   }
 
-  update(id: string, input: UpdateProductInput): Product | undefined {
+  update(id: string, input: UpdateProductInput): Product {
     const existing = this.products.get(id);
-    if (!existing) return undefined;
+    if (!existing) throw new Error(`Product ${id} not found`);
 
     const updated: Product = {
       ...existing,

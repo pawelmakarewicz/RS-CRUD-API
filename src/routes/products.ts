@@ -1,24 +1,16 @@
-import {
-  FastifyPluginAsync,
-  FastifyRequest,
-  FastifyReply,
-} from 'fastify';
 import { z } from 'zod';
-import { InMemoryDB } from '../db.js';
+import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
   productSchema,
   createProductSchema,
   updateProductSchema,
-  type CreateProductInput,
-  type UpdateProductInput,
 } from '../schemas.js';
 
-const isValidUUID = (id: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(id);
-};
+const errorSchema = z.object({ message: z.string() });
 
-const productRoutes: FastifyPluginAsync = async (fastify) => {
+const uuidSchema = z.object({ id: z.string().uuid() });
+
+const productRoutes: FastifyPluginAsyncZod = async (fastify) => {
   const db = fastify.db;
 
   fastify.get('/', {
@@ -27,21 +19,19 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
         200: z.array(productSchema),
       },
     },
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
+  }, async (request, reply) => {
     return reply.send(db.getAll());
   });
 
-  fastify.get<{ Params: { id: string } }>('/:id', {
+  fastify.get('/:id', {
     schema: {
+      params: uuidSchema,
       response: {
         200: productSchema,
+        404: errorSchema,
       },
     },
-  }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    if (!isValidUUID(request.params.id)) {
-      return reply.status(400).send({ message: 'Invalid product ID format' });
-    }
-
+  }, async (request, reply) => {
     const product = db.getById(request.params.id);
     if (!product) {
       return reply.status(404).send({ message: 'Product not found' });
@@ -56,23 +46,21 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
         201: productSchema,
       },
     },
-  }, async (request: FastifyRequest<{ Body: CreateProductInput }>, reply: FastifyReply) => {
+  }, async (request, reply) => {
     const newProduct = db.create(request.body);
     return reply.status(201).send(newProduct);
   });
 
-  fastify.put<{ Params: { id: string } }>('/:id', {
+  fastify.put('/:id', {
     schema: {
+      params: uuidSchema,
       body: updateProductSchema,
       response: {
         200: productSchema,
+        404: errorSchema,
       },
     },
-  }, async (request: FastifyRequest<{ Params: { id: string }; Body: UpdateProductInput }>, reply: FastifyReply) => {
-    if (!isValidUUID(request.params.id)) {
-      return reply.status(400).send({ message: 'Invalid product ID format' });
-    }
-
+  }, async (request, reply) => {
     if (!db.exists(request.params.id)) {
       return reply.status(404).send({ message: 'Product not found' });
     }
@@ -81,13 +69,11 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(updated);
   });
 
-  fastify.delete<{ Params: { id: string } }>('/:id', {
-    schema: {},
-  }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    if (!isValidUUID(request.params.id)) {
-      return reply.status(400).send({ message: 'Invalid product ID format' });
-    }
-
+  fastify.delete('/:id', {
+    schema: {
+      params: uuidSchema,
+    },
+  }, async (request, reply) => {
     if (!db.exists(request.params.id)) {
       return reply.status(404).send({ message: 'Product not found' });
     }
