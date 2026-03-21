@@ -1,6 +1,7 @@
 import Fastify, { FastifyInstance } from "fastify";
 import { InMemoryDB } from "../src/db.js";
 import { initApp } from "./helpers/app.js";
+import { API_ROUTES } from "./constants/routes.js";
 
 describe("Scenario CRUD  one product", () => {
   let app: FastifyInstance;
@@ -17,9 +18,8 @@ describe("Scenario CRUD  one product", () => {
   it("returns empty array", async () => {
     const response = await app.inject({
       method: "GET",
-      url: "/api/products",
+      url: API_ROUTES.PRODUCTS,
     });
-    console.log("TEST!!!!", response.json());
 
     expect(response.json()).toEqual([]);
 
