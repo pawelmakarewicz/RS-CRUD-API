@@ -5,8 +5,9 @@ import {
   createProductSchema,
   updateProductSchema,
   uuidSchema,
-  errorSchema 
+  errorSchema
 } from '../schemas.js';
+import { NotFoundError, requireExists } from '../errors.js';
 
 const productRoutes: FastifyPluginAsyncZod = async (fastify) => {
   const db = fastify.db;
@@ -30,10 +31,10 @@ const productRoutes: FastifyPluginAsyncZod = async (fastify) => {
       },
     },
   }, async (request, reply) => {
-    const product = db.getById(request.params.id);
-    if (!product) {
-      return reply.status(404).send({ message: 'Product not found' });
-    }
+    const product = requireExists(
+      db.getById(request.params.id),
+      'Product not found'
+    );
     return reply.send(product);
   });
 
@@ -60,7 +61,7 @@ const productRoutes: FastifyPluginAsyncZod = async (fastify) => {
     },
   }, async (request, reply) => {
     if (!db.exists(request.params.id)) {
-      return reply.status(404).send({ message: 'Product not found' });
+      throw new NotFoundError('Product not found');
     }
 
     const updated = db.update(request.params.id, request.body);
@@ -73,7 +74,7 @@ const productRoutes: FastifyPluginAsyncZod = async (fastify) => {
     },
   }, async (request, reply) => {
     if (!db.exists(request.params.id)) {
-      return reply.status(404).send({ message: 'Product not found' });
+      throw new NotFoundError('Product not found');
     }
 
     db.delete(request.params.id);

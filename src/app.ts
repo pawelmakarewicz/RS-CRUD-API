@@ -9,6 +9,7 @@ import {
 } from "fastify-type-provider-zod";
 import { productRoutes } from "./routes/products.js";
 import { InMemoryDB, db as defaultDb } from "./db.js";
+import { NotFoundError } from "./errors.js";
 
 export const buildApp = (db: InMemoryDB = defaultDb) => {
   const app = Fastify({
@@ -20,11 +21,18 @@ export const buildApp = (db: InMemoryDB = defaultDb) => {
 
   app.decorate("db", db);
 
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof NotFoundError) {
+      return reply.status(error.statusCode).send({ message: error.message });
+    }
+    throw error;
+  });
+
   app.register(fastifySwagger, {
     openapi: {
       openapi: "3.0.0",
       info: {
-        title: "CRUD API - Product Catalog",
+        title: "CRUD API - Product Catalog", 
         description: "Simple CRUD API for managing products",
         version: "1.0.0",
       },
@@ -40,24 +48,6 @@ export const buildApp = (db: InMemoryDB = defaultDb) => {
   });
 
   app.register(productRoutes, { prefix: "/api/products" });
-
-  app.setNotFoundHandler((request, reply) => {
-    reply.status(404).send({ message: "Route not found" });
-  });
-
-  app.setErrorHandler((error, request, reply) => {
-    app.log.error(error);
-
-    const statusCode =
-      error instanceof Error && "statusCode" in error
-        ? (error as { statusCode: number }).statusCode
-        : 500;
-
-    const message =
-      error instanceof Error ? error.message : "Internal server error";
-
-    reply.status(statusCode).send({ message });
-  });
 
   return app;
 };
