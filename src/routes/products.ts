@@ -4,11 +4,9 @@ import {
   productSchema,
   createProductSchema,
   updateProductSchema,
+  uuidSchema,
+  errorSchema 
 } from '../schemas.js';
-
-const errorSchema = z.object({ message: z.string() });
-
-const uuidSchema = z.object({ id: z.string().uuid() });
 
 const productRoutes: FastifyPluginAsyncZod = async (fastify) => {
   const db = fastify.db;
@@ -19,7 +17,7 @@ const productRoutes: FastifyPluginAsyncZod = async (fastify) => {
         200: z.array(productSchema),
       },
     },
-  }, async (request, reply) => {
+  }, async (_, reply) => {
     return reply.send(db.getAll());
   });
 

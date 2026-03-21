@@ -18,4 +18,6 @@ export const updateProductSchema = createProductSchema.partial();
 
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 
-export const uuidSchema = z.string().uuid();
+export const uuidSchema = z.object({ id: z.string().check(z.uuid()) });
+
+export const errorSchema = z.object({ message: z.string() });
