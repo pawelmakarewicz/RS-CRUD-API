@@ -13,17 +13,14 @@ import {
   type UpdateProductInput,
 } from '../schemas.js';
 
-// UUID validation function
 const isValidUUID = (id: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(id);
 };
 
-// Типизированные роуты
 const productRoutes: FastifyPluginAsync = async (fastify) => {
   const db = fastify.db;
 
-  // GET / - получить все продукты
   fastify.get('/', {
     schema: {
       response: {
@@ -34,7 +31,6 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(db.getAll());
   });
 
-  // GET /:id - получить продукт по ID
   fastify.get<{ Params: { id: string } }>('/:id', {
     schema: {
       response: {
@@ -53,7 +49,6 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(product);
   });
 
-  // POST / - создать продукт
   fastify.post('/', {
     schema: {
       body: createProductSchema,
@@ -66,7 +61,6 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(201).send(newProduct);
   });
 
-  // PUT /:id - обновить продукт
   fastify.put<{ Params: { id: string } }>('/:id', {
     schema: {
       body: updateProductSchema,
@@ -87,7 +81,6 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(updated);
   });
 
-  // DELETE /:id - удалить продукт
   fastify.delete<{ Params: { id: string } }>('/:id', {
     schema: {},
   }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {

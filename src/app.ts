@@ -13,10 +13,8 @@ export const buildApp = (db: InMemoryDB = defaultDb) => {
     .setValidatorCompiler(validatorCompiler)
     .setSerializerCompiler(serializerCompiler);
 
-  // Добавляем db как decoration - доступен в роутах через fastify.db
   app.decorate('db', db);
 
-  // Регистрируем Swagger
   app.register(fastifySwagger, {
     openapi: {
       openapi: '3.0.0',
@@ -29,7 +27,6 @@ export const buildApp = (db: InMemoryDB = defaultDb) => {
     transform: jsonSchemaTransform,
   });
 
-  // Регистрируем Swagger UI
   app.register(fastifySwaggerUI, {
     routePrefix: '/docs',
     uiConfig: {
@@ -37,18 +34,14 @@ export const buildApp = (db: InMemoryDB = defaultDb) => {
     },
   });
 
-  // Регистрируем роуты с префиксом /api/products
   app.register(productRoutes, { prefix: '/api/products' });
 
-  // 404 handler для несуществующих роутов
   app.setNotFoundHandler((request, reply) => {
     reply.status(404).send({ message: 'Route not found' });
   });
 
-  // 500 handler для серверных ошибок
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);
-    // Fastify сам ставит statusCode для валидации
     const statusCode = error.statusCode || 500;
     reply.status(statusCode).send({ message: error.message || 'Internal server error' });
   });
