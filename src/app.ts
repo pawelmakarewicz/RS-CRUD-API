@@ -11,9 +11,15 @@ import { productRoutes } from "./routes/products.js";
 import { InMemoryDB, db as defaultDb } from "./db.js";
 import { NotFoundError } from "./errors.js";
 
-export const buildApp = (db: InMemoryDB = defaultDb) => {
+export interface BuildAppOptions {
+  disableSwagger?: boolean;
+  disableLogger?: boolean;
+}
+
+export const buildApp = (db: InMemoryDB = defaultDb, options: BuildAppOptions = {}) => {
+  const { disableSwagger = false, disableLogger = false } = options;
   const app = Fastify({
-    logger: true,
+    logger: !disableLogger,
   })
     .withTypeProvider<ZodTypeProvider>()
     .setValidatorCompiler(validatorCompiler)
@@ -28,24 +34,26 @@ export const buildApp = (db: InMemoryDB = defaultDb) => {
     throw error;
   });
 
-  app.register(fastifySwagger, {
-    openapi: {
-      openapi: "3.0.0",
-      info: {
-        title: "CRUD API - Product Catalog", 
-        description: "Simple CRUD API for managing products",
-        version: "1.0.0",
+  if (!options.disableSwagger) {
+    app.register(fastifySwagger, {
+      openapi: {
+        openapi: "3.0.0",
+        info: {
+          title: "CRUD API - Product Catalog",
+          description: "Simple CRUD API for managing products",
+          version: "1.0.0",
+        },
       },
-    },
-    transform: jsonSchemaTransform,
-  });
+      transform: jsonSchemaTransform,
+    });
 
-  app.register(fastifySwaggerUI, {
-    routePrefix: "/docs",
-    uiConfig: {
-      docExpansion: "list",
-    },
-  });
+    app.register(fastifySwaggerUI, {
+      routePrefix: "/docs",
+      uiConfig: {
+        docExpansion: "list",
+      },
+    });
+  }
 
   app.register(productRoutes, { prefix: "/api/products" });
 
