@@ -6,7 +6,6 @@ import { API_ROUTES } from "./constants/routes.js";
 describe("Scenario GET all reflects actual state", () => {
 
   let app: FastifyInstance;
-  let db: InMemoryDB;
   let idA: string;
   let idB: string;
 
@@ -16,7 +15,6 @@ describe("Scenario GET all reflects actual state", () => {
   beforeAll(async () => {
     const result = await initApp();
     app = result.app;
-    db = result.db;
   });
 
   afterAll(() => app.close());
